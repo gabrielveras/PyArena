@@ -48,7 +48,7 @@ class FifthEdition:
     @classmethod
     def get_proficiency(cls, value):
         "Param is Hit Dice for PCs and Challenge Rate for NPCs."
-        return max(2, ceil(value/4) + 1)
+        return floor((value-1)/4) + 1
 
     @classmethod
     def get_ability_modifier(cls, score):
@@ -59,6 +59,9 @@ class FifthEdition:
         return roll_sum(4, 6, True)
 
     @classmethod
-    def get_max_hit_points(cls, hit_dice, rolled_hit_points, hit_die_size=8, constitution=0):
-        max_hp = hit_die_size + rolled_hit_points + (hit_dice * cls.get_ability_modifier(constitution))
-        return max(1, max_hp)
+    def get_max_hit_points(cls, hit_dice, rolled_hit_points, hit_die_size=8, constitution=0, is_player=True):
+        if is_player:
+            max_hp = hit_die_size + rolled_hit_points + (hit_dice * cls.get_ability_modifier(constitution))
+            return max(1, max_hp)
+        else:
+            return (hit_dice * (hit_die_size+1) / 2) + (hit_dice * cls.get_ability_modifier(constitution))
