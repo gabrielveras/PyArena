@@ -12,6 +12,13 @@ class ArenaModel:
     #timestamp:int
 
 @dataclass
+class MonsterMetricModel:
+    uuid:UUID
+    fighter_level:int
+    number_of_fighters:int
+    fights:int
+
+@dataclass
 class CharacterModel:
     uuid:UUID
     simulation:UUID

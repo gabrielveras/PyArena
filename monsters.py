@@ -20,6 +20,18 @@ class Size(Enum):
 class BaseMonster(BaseCharacter):
 
     @classmethod
+    def create_by_name(cls, simulation, name):
+        match name:
+            case "goblin":
+                return cls.create_goblin(simulation)
+            case "hill giant":
+                return cls.create_hill_giant(simulation)
+            case "ogre":
+                return cls.create_ogre(simulation)
+            case "owlbear":
+                return cls.create_owlbear(simulation)
+
+    @classmethod
     def create(cls, model, challenge_rate, size, armor, has_shield=False):
         obj = cls()
         obj.challenge_rate = challenge_rate
@@ -41,6 +53,15 @@ class BaseMonster(BaseCharacter):
         return monster
 
     @classmethod
+    def create_hill_giant(cls, simulation):
+        model = CharacterModel(uuid4(), simulation, "hill giant", 10, 0, 0, ArmorList.NATURAL_13.armor_class, 21, 8, 19, 5, 9, 6)
+        monster = BaseMonster.create(model, 5, Size.HUGE, ArmorList.NATURAL_13)
+        greatclub = MeleeWeaponAttack(monster, (3,8), WeaponProperty.TWO_HANDED)
+        monster.append_action(Multiattack(monster, [greatclub, greatclub]))
+        monster.append_action(greatclub)
+        return monster
+
+    @classmethod
     def create_ogre(cls, simulation):
         model = CharacterModel(uuid4(), simulation, "ogre", 7, 0, 0, ArmorList.HIDE.armor_class, 19, 8, 16, 5, 7, 7)
         monster = BaseMonster.create(model, 2, Size.LARGE, ArmorList.HIDE)
@@ -57,15 +78,6 @@ class BaseMonster(BaseCharacter):
         monster.append_action(Multiattack(monster, [claws, beak]))
         monster.append_action(claws)
         monster.append_action(beak)
-        return monster
-
-    @classmethod
-    def create_hill_giant(cls, simulation):
-        model = CharacterModel(uuid4(), simulation, "hill giant", 10, 0, 0, ArmorList.NATURAL_13.armor_class, 21, 8, 19, 5, 9, 6)
-        monster = BaseMonster.create(model, 5, Size.HUGE, ArmorList.NATURAL_13)
-        greatclub = MeleeWeaponAttack(monster, (3,8), WeaponProperty.TWO_HANDED)
-        monster.append_action(Multiattack(monster, [greatclub, greatclub]))
-        monster.append_action(greatclub)
         return monster
 
     def __init__(self):
