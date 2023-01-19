@@ -9,19 +9,20 @@ class ArenaModel:
     number_of_fighters:int
     fights_per_year:int
     max_turns:int
-    #timestamp:int
 
 @dataclass
 class MonsterMetricModel:
     uuid:UUID
     fighter_level:int
     number_of_fighters:int
-    fights:int
+    number_of_fights:int
+
+def monster_metric_str(m:MonsterMetricModel):
+    return f"{m.uuid},{m.fighter_level},{m.number_of_fighters},{m.number_of_fights}"
 
 @dataclass
 class CharacterModel:
     uuid:UUID
-    simulation:UUID
     name:str
     hit_dice:int
     max_hit_points:int
@@ -33,7 +34,9 @@ class CharacterModel:
     wisdom:int
     intelligence:int
     charisma:int
-    #TODO timestamp:int
+
+def character_str(m:CharacterModel):
+    return f"{m.uuid},{m.name},{m.hit_dice},{m.max_hit_points},{m.rolled_hit_points},{m.strength},{m.dexterity},{m.constitution},{m.wisdom},{m.intelligence},{m.charisma}"
 
 @dataclass
 class ClassModel(CharacterModel):
@@ -43,6 +46,3 @@ class ClassModel(CharacterModel):
 @dataclass
 class PartyModel:
     uuid:UUID
-    simulation:UUID
-    member:UUID
-    #TODO timestamp:int

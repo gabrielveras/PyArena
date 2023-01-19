@@ -1,12 +1,14 @@
 """Characters"""
 
+import logging
+
 from random import choice, shuffle
 from uuid import uuid4
 
 from actions import SecondWind, ExtraAttack
 from database import Database
 from equipment import ArmorList
-from models import ClassModel, PartyModel
+from models import ClassModel, PartyModel, character_str
 from rule_books import FifthEdition as Rules
 from arena_utils import roll_die, roll_sum
 
@@ -29,8 +31,9 @@ class BaseCharacter:
         self.skill_fighting_style = Rules.FightingStyle.NONE
 
     def update(self):
-        self.set_armor_class()
         self.model.max_hit_points = Rules.get_max_hit_points(self.model.hit_dice, self.model.rolled_hit_points, self.__class__.HIT_DIE_SIZE, self.model.constitution)
+        self.proficiency = Rules.get_proficiency(self.model.hit_dice)
+        self.set_armor_class()
         for action in self._actions:
             action.update()
 
@@ -67,18 +70,19 @@ class BaseClass(BaseCharacter):
     EXPERIENCE_TABLE = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 
     @classmethod
-    def create(cls, simulation, name="", level=1, armor=ArmorList.UNARMORED):
+    def create(cls, name="", level=1, armor=ArmorList.UNARMORED):
         obj = cls()
         #str, dex, con, wis, int, cha = 15, 13, 14, 12, 10, 8
         str, dex, con = Rules.roll_ability_score(), Rules.roll_ability_score(), Rules.roll_ability_score()
         wis, int, cha = Rules.roll_ability_score(), Rules.roll_ability_score(), Rules.roll_ability_score()
-        rolled_hit_points = (level-1) * roll_sum(level, cls.HIT_DIE_SIZE)
-        max_hit_points = Rules.get_max_hit_points(level, rolled_hit_points, cls.HIT_DIE_SIZE, con)
-        obj.model = ClassModel(uuid4(), simulation, name, level, max_hit_points, rolled_hit_points, armor.armor_class, str, dex, con, wis, int, cha, 0, 18)
+        obj.model = ClassModel(uuid4(), name, 1, cls.HIT_DIE_SIZE, cls.HIT_DIE_SIZE, armor.armor_class, str, dex, con, wis, int, cha, 0, 18)
         obj.set_armor_class(armor)
+        for _ in range(1,level):
+            obj.add_level()
+        obj.update()
         obj.current_hp = obj.model.max_hit_points
         obj.is_alive = True
-        obj.update()
+        logging.debug(f"CHARACTER,NEW,{character_str(obj.model)}")
         return obj
 
     @classmethod
@@ -88,15 +92,12 @@ class BaseClass(BaseCharacter):
         obj.current_hp = obj.model.max_hit_points
         obj.is_alive = True
         obj.update()
+        logging.debug(f"CHARACTER,NEW,{character_str(obj.model)}")
         return obj
 
     def __init__(self):
         super().__init__()
         self.model = None
-
-    def update(self):
-        self.proficiency = Rules.get_proficiency(self.model.hit_dice)
-        super().update()
 
     def add_experience(self, amount):
         self.model.experience += amount
@@ -189,6 +190,7 @@ class BaseParty:
         self._uuid = uuid4()
         self._members = []
         self._fallen = []
+        logging.debug(f"PARTY,NEW,{self._uuid}")
 
     def get_model(self):
         model = []
@@ -222,6 +224,7 @@ class BaseParty:
     def add_member(self, member):
         "Add a member to the party"
         self._members.append(member)
+        logging.debug(f"PARTY,ADD_MEMBER,{self._uuid},{member.model.uuid}")
 
     def get_member(self, index):
         "Return the character on the index"
@@ -275,10 +278,6 @@ class BaseParty:
 
 class ClassParty(BaseParty):
 
-    def __init__(self):
-        self._members = []
-        self._fallen = []
-
     def add_experience(self, experience):
         party_size = len(self._members)
         if party_size > 0:
@@ -290,4 +289,3 @@ class ClassParty(BaseParty):
         super().end_year()
         for member in self._members:
             member.model.age += 1
-

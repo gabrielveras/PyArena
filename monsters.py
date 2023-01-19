@@ -1,12 +1,14 @@
 """Monsters"""
 
-from enum import auto, Enum
-from uuid import UUID, uuid4
+import logging
+
+from enum import Enum
+from uuid import uuid4
 
 from actions import MeleeWeaponAttack, Multiattack
 from character import BaseCharacter
 from equipment import ArmorList, WeaponProperty
-from models import CharacterModel
+from models import CharacterModel, character_str
 from rule_books import FifthEdition as Rules
 from arena_utils import roll_sum
 
@@ -20,16 +22,16 @@ class Size(Enum):
 class BaseMonster(BaseCharacter):
 
     @classmethod
-    def create_by_name(cls, simulation, name):
+    def create_by_name(cls, name):
         match name:
             case "goblin":
-                return cls.create_goblin(simulation)
+                return cls.create_goblin()
             case "hill giant":
-                return cls.create_hill_giant(simulation)
+                return cls.create_hill_giant()
             case "ogre":
-                return cls.create_ogre(simulation)
+                return cls.create_ogre()
             case "owlbear":
-                return cls.create_owlbear(simulation)
+                return cls.create_owlbear()
 
     @classmethod
     def create(cls, model, challenge_rate, size, armor, has_shield=False):
@@ -43,18 +45,19 @@ class BaseMonster(BaseCharacter):
         obj.current_hp = obj.model.max_hit_points
         obj.is_alive = True
         obj.update()
+        logging.debug(f"MONSTER,NEW,{challenge_rate},{character_str(model)}")
         return obj
 
     @classmethod
-    def create_goblin(cls, simulation):
-        model = CharacterModel(uuid4(), simulation, "goblin", 2, 0, 0, ArmorList.LEATHER.armor_class, 8, 14, 10, 10, 8, 8)
+    def create_goblin(cls):
+        model = CharacterModel(uuid4(), "goblin", 2, 0, 0, ArmorList.LEATHER.armor_class, 8, 14, 10, 10, 8, 8)
         monster = BaseMonster.create(model, 0, Size.SMALL, ArmorList.LEATHER, True)
         monster.append_action(MeleeWeaponAttack(monster, (1,6), WeaponProperty.FINESSE|WeaponProperty.LIGHT))
         return monster
 
     @classmethod
-    def create_hill_giant(cls, simulation):
-        model = CharacterModel(uuid4(), simulation, "hill giant", 10, 0, 0, ArmorList.NATURAL_13.armor_class, 21, 8, 19, 5, 9, 6)
+    def create_hill_giant(cls):
+        model = CharacterModel(uuid4(), "hill giant", 10, 0, 0, ArmorList.NATURAL_13.armor_class, 21, 8, 19, 5, 9, 6)
         monster = BaseMonster.create(model, 5, Size.HUGE, ArmorList.NATURAL_13)
         greatclub = MeleeWeaponAttack(monster, (3,8), WeaponProperty.TWO_HANDED)
         monster.append_action(Multiattack(monster, [greatclub, greatclub]))
@@ -62,16 +65,16 @@ class BaseMonster(BaseCharacter):
         return monster
 
     @classmethod
-    def create_ogre(cls, simulation):
-        model = CharacterModel(uuid4(), simulation, "ogre", 7, 0, 0, ArmorList.HIDE.armor_class, 19, 8, 16, 5, 7, 7)
+    def create_ogre(cls):
+        model = CharacterModel(uuid4(), "ogre", 7, 0, 0, ArmorList.HIDE.armor_class, 19, 8, 16, 5, 7, 7)
         monster = BaseMonster.create(model, 2, Size.LARGE, ArmorList.HIDE)
         large_greatclub = MeleeWeaponAttack(monster, (2,8), WeaponProperty.TWO_HANDED)
         monster.append_action(large_greatclub)
         return monster
 
     @classmethod
-    def create_owlbear(cls, simulation):
-        model = CharacterModel(uuid4(), simulation, "owlbear", 7, 0, 0, ArmorList.NATURAL_13.armor_class, 20, 12, 17, 3, 12, 7)
+    def create_owlbear(cls):
+        model = CharacterModel(uuid4(), "owlbear", 7, 0, 0, ArmorList.NATURAL_13.armor_class, 20, 12, 17, 3, 12, 7)
         monster = BaseMonster.create(model, 3, Size.LARGE, ArmorList.NATURAL_13)
         claws = MeleeWeaponAttack(monster, (2,8))
         beak = MeleeWeaponAttack(monster, (1,10))
@@ -81,6 +84,7 @@ class BaseMonster(BaseCharacter):
         return monster
 
     def __init__(self):
+        super().__init__()
         self.challenge_rate = 0
 
     def update(self):

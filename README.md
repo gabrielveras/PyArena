@@ -9,8 +9,10 @@ Main differences:
 - Written in Python
 - CSV files are in Daniel's repo.
 - No console print.
-- Saves data in a PostgreSQL database.
+- ~~Saves data in a PostgreSQL database~~.
+- Saves data in a log file.
+- A script to load the log file into the database will come Soon™.
 
 Interesting findings:
-- Most fighters stays at the first 4 levels.
-- Very few pass the 4th level barrier but when they do they go up to 10th level.
+- When fighting another fighters, most fighters at or below the 4th level.
+- Very few pass the 4th level barrier but when they do they can go up to 10th level.

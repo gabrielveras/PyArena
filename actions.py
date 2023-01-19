@@ -1,5 +1,7 @@
 """Actions"""
 
+import logging
+
 from equipment import WeaponProperty
 from rule_books import FifthEdition as Rules
 from arena_utils import roll_die, roll_sum
@@ -24,8 +26,12 @@ class SecondWind(BaseAction):
     def execute(self):
         if self.short_rested and self.owner.current_hp <= self.owner.model.max_hit_points * 0.3:
             amount = self.owner.model.hit_dice * roll_die(10)
+            old_hp = self.owner.current_hp
             self.owner.current_hp = min(self.owner.model.max_hit_points, self.owner.current_hp + amount)
             self.short_rested = False
+            logging.debug(f"ACTION,SECOND_WING,{self.owner.model.uuid},{self.owner.current_hp - old_hp}")
+            return True
+        return False
 
 class MeleeWeaponAttack(BaseAction):
 
@@ -69,10 +75,17 @@ class MeleeWeaponAttack(BaseAction):
         die_roll = roll_die(20)
         if die_roll > 1:
             attack_roll = die_roll + self.owner.proficiency + self.ability_modifier
-            if die_roll == 20 or attack_roll >= target.model.armor_class:
+            armor_class = target.model.armor_class
+            if die_roll == 20 or attack_roll >= armor_class:
                 dmg_dice = self.damage_dice[1] + 2*(WeaponProperty.VERSATILE in self.weapon_properties)
-                damage = roll_sum(self.damage_dice[0], dmg_dice) + self.ability_modifier + (die_roll >= self.owner.skill_critical_hit) * roll_sum(self.damage_dice[0], dmg_dice)
-                target.take_damage(max(1,damage))
+                damage = max(1,roll_sum(self.damage_dice[0], dmg_dice) + self.ability_modifier + (die_roll >= self.owner.skill_critical_hit) * roll_sum(self.damage_dice[0], dmg_dice))
+                target.take_damage(damage)
+                logging.debug(f"ACTION,MELEE_WEAPON_ATTACK,TRUE,{self.owner.model.uuid},{target.model.uuid},{die_roll},{attack_roll},{armor_class},{damage}")
+            else:
+                logging.debug(f"ACTION,MELEE_WEAPON_ATTACK,FALSE,{self.owner.model.uuid},{target.model.uuid},{die_roll},{attack_roll},{armor_class}")
+        else:
+            logging.debug(f"ACTION,MELEE_WEAPON_ATTACK,FALSE,{self.owner.model.uuid},{target.model.uuid},{die_roll}")
+        return True
 
 class ExtraAttack(BaseAction):
 
@@ -82,8 +95,10 @@ class ExtraAttack(BaseAction):
         self.attack = attack
 
     def execute(self, target):
+        r = True
         for i in range(self.number_of_attacks):
-            self.attack.execute(target)
+            r = r and self.attack.execute(target)
+        return r
 
 class Multiattack(BaseAction):
 
@@ -92,8 +107,10 @@ class Multiattack(BaseAction):
         self.attacks = attacks
 
     def execute(self, target):
+        r = True
         for atk in self.attacks:
-            atk.execute(target)
+            r = r and atk.execute(target)
+        return r
 
     def update(self):
         for atk in self.attacks:
